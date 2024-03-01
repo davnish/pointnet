@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+torch.manual_seed(42)
 
 # class input_transform(nn.Module):
 
@@ -9,24 +10,130 @@ import torch.nn.functional as F
 #         self.conv1 = 
 
 
-class mlp(nn.Module):
-    def __init__(self, n_embd):
-        super(mlp, self).__init__()
+class pointnet(nn.Module):
+    def __init__(self, n_embd, dropout):
+        super(pointnet, self).__init__()
         self.conv1 = nn.Conv1d(3, 64, kernel_size=1)
         self.conv2 = nn.Conv1d(64, 128, kernel_size=1)
-        self.conv3 = nn.Conv1d(128, 512, kernel_size=1)
+        self.conv3 = nn.Conv1d(128, 1024, kernel_size=1)
 
-        self.ll1 = nn.Linear(512 , 40)
-        # self.ll2 = nn.Linear(1024 ,)
+        self.ll1 = nn.Linear(1024, 512)
+        self.ll2 = nn.Linear(512, 256)
+        self.output = nn.Linear(256, 40)
+
+        self.t1 = T1(dropout)
+        self.t2 = T2(dropout)
+
+        self.bn1 = nn.BatchNorm1d(64)
+        self.bn2 = nn.BatchNorm1d(128)
+        self.bn3 = nn.BatchNorm1d(1024)
+        
+        self.bn4 = nn.BatchNorm1d(512)
+        self.bn5 = nn.BatchNorm1d(256)
+
+        self.dropout1 = nn.Dropout(dropout)
+        self.dropout2 = nn.Dropout(dropout)
+        self.dropout3 = nn.Dropout(dropout)
+        self.dropout4 = nn.Dropout(dropout)
+        self.dropout5 = nn.Dropout(dropout)
+
 
     
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = F.adaptive_avg_pool1d(x, 1).view(x.size(0), -1)
-        x = self.ll1(x)
+        t1 = self.t1(x)
+        # x = torch.bmm(x, t1) #bmm
+        x =  torch.bmm(x, t1)
+
+        x = self.dropout1(F.relu(self.bn1(self.conv1(x))))
+        t2 = self.t2(x)
+        
+        x = torch.bmm(x, t2)
+
+        x = self.dropout2(F.relu(self.bn2(self.conv2(x))))
+        x = self.dropout3(F.relu(self.bn3(self.conv3(x))))
+        x = F.adaptive_max_pool1d(x, 1).view(x.size(0), -1)
+        
+        x = self.dropout4(F.relu(self.bn4(self.ll1(x))))
+        x = self.dropout5(F.relu(self.bn5(self.ll2(x))))
+        x = self.output(x)
         return x
+
+class T1(nn.Module):
+    def __init__(self, dropout):
+        super(T1, self).__init__()
+        self.conv1 = nn.Conv1d(3, 64, kernel_size=1)
+        self.conv2 = nn.Conv1d(64, 128, kernel_size=1)
+        self.conv3 = nn.Conv1d(128, 1024, kernel_size=1)
+
+        self.ll1 = nn.Linear(1024, 512)
+        self.ll2 = nn.Linear(512, 256)
+
+        self.t1 = nn.Linear(256, 3)
+
+        self.bn1 = nn.BatchNorm1d(64)
+        self.bn2 = nn.BatchNorm1d(128)
+        self.bn3 = nn.BatchNorm1d(1024)
+
+        self.bn4 = nn.BatchNorm1d(512)
+        # self.bn5 = nn.BatchNorm1d(256)
+
+        self.dropout1 = nn.Dropout(dropout)
+        self.dropout2 = nn.Dropout(dropout)
+        self.dropout3 = nn.Dropout(dropout)
+        
+        self.dropout4 = nn.Dropout(dropout)
+        self.dropout5 = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = self.dropout1(F.relu(self.bn1(self.conv1(x))))
+        x = self.dropout2(F.relu(self.bn2(self.conv2(x))))
+        x = self.dropout3(F.relu(self.bn3(self.conv3(x))))
+
+        x = F.adaptive_max_pool1d(x, 1)
+
+        x = self.dropout4(F.relu(self.ll1(x.view(x.size(0), -1))))
+        x = self.dropout5(F.relu(self.ll2(x)))
+        output = self.t1(x)
+        return output
+
+class T2(nn.Module):
+    def __init__(self, dropout):
+        super(T2, self).__init__()
+        self.conv1 = nn.Conv1d(64, 64, kernel_size=1)
+        self.conv2 = nn.Conv1d(64, 128, kernel_size=1)
+        self.conv3 = nn.Conv1d(128, 1024, kernel_size=1)
+
+        self.ll1 = nn.Linear(1024, 512)
+        self.ll2 = nn.Linear(512, 256)
+
+        self.t1 = nn.Linear(256, 64)
+
+        self.bn1 = nn.BatchNorm1d(64)
+        self.bn2 = nn.BatchNorm1d(128)
+        self.bn3 = nn.BatchNorm1d(1024)
+
+        self.bn4 = nn.BatchNorm1d(512)
+        # self.bn5 = nn.BatchNorm1d(256)
+
+        self.dropout1 = nn.Dropout(dropout)
+        self.dropout2 = nn.Dropout(dropout)
+        self.dropout3 = nn.Dropout(dropout)
+        
+        self.dropout4 = nn.Dropout(dropout)
+        self.dropout5 = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = self.dropout1(F.relu(self.bn1(self.conv1(x))))
+        x = self.dropout2(F.relu(self.bn2(self.conv2(x))))
+        x = self.dropout3(F.relu(self.bn3(self.conv3(x))))
+
+        x = F.adaptive_max_pool1d(x, 1)
+
+        x = self.dropout4(F.relu(self.ll1(x.view(x.size(0), -1))))
+        x = self.dropout5(F.relu(self.ll2(x)))
+        output = self.t1(x)
+        return output
+
 
 class pct(nn.Module):
     def __init__(self, n_embd, n_heads, n_layers, n_labels = 8):

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
-from model import pct, mlp
+from model import pct, pointnet
 from dataset import Dales, modelnet40
 import time
 from sklearn.metrics import accuracy_score
@@ -14,15 +14,16 @@ torch.manual_seed(42)
 
 grid_size = 20 # The size of the grid from 500mx500m 
 points_taken = 4096 # Points taken per each grid 
-batch_size = 2 
-lr = 1e-2
-epoch = 30
+batch_size = 16
+lr = 1e-3
+epoch = 200
 eval_train_test = 10
 n_embd = 128 
 n_heads = 4
 n_layers = 2
-step_size = 30 # Reduction of Learning at how many epochs
+step_size = 40 # Reduction of Learning at how many epochs
 batch_eval_inter = 100
+dropout = 0.3
 # eval_test = 10
 
 # ------------------
@@ -40,12 +41,12 @@ test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False,
 
 # Initialize the model
 # model = pct(n_embd, n_heads, n_layers)
-model = mlp(n_embd)
+model = pointnet(n_embd, dropout)
 
 # loss, Optimizer, Scheduler
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = lr)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = step_size, gamma = 0.1)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = step_size, gamma = 0.5)
 model = model.to(device)
 
 
@@ -108,7 +109,7 @@ def test_loop(loader):
 if __name__ == '__main__':
     print(f'{device = }, {grid_size = }, {points_taken = }, {epoch = }, {n_embd = }, {n_layers = }, {n_heads = }, {batch_size = }, {lr = }')
     start = time.time()
-    for epoch in range(epoch): 
+    for epoch in range(1, epoch+1): 
         train_loss, train_acc = train_loop(train_loader)
         scheduler.step()
         if epoch%eval_train_test==0:
