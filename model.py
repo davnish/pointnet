@@ -70,7 +70,7 @@ class T1(nn.Module):
         self.ll1 = nn.Linear(1024, 512)
         self.ll2 = nn.Linear(512, 256)
 
-        self.t1 = nn.Linear(256, 3)
+        self.t1 = nn.Linear(256, 9)
 
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(128)
@@ -97,7 +97,7 @@ class T1(nn.Module):
         x = self.dropout5((F.relu(self.b5(self.ll2(x)))))
         x = self.t1(x) 
         iden = Variable(torch.from_numpy(np.eye(3).flatten().astype(np.float32)))
-        if x.is_cuda:
+        if x.is_cuda or x.is_mps:
             iden = iden.cuda()
         x = x + iden
         x = x.view(-1, 3, 3)
@@ -113,7 +113,7 @@ class T2(nn.Module):
         self.ll1 = nn.Linear(1024, 512)
         self.ll2 = nn.Linear(512, 256)
 
-        self.t1 = nn.Linear(256, 64)
+        self.t1 = nn.Linear(256, 4096)
 
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(128)
@@ -140,7 +140,7 @@ class T2(nn.Module):
         x = self.dropout5((F.relu(self.bn5(self.ll2(x)))))
         x = self.t1(x) 
         iden = Variable(torch.from_numpy(np.eye(3).flatten().astype(np.float32)))
-        if x.is_cuda:
+        if x.is_cuda or x.is_mps:
             iden = iden.cuda()
         x = x + iden
         x = x.view(-1, 64, 64)
