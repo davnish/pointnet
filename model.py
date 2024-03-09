@@ -94,7 +94,7 @@ class T1(nn.Module):
         x = F.adaptive_max_pool1d(x, 1)
 
         x = self.dropout4(F.relu(self.bn4(self.ll1(x.view(x.size(0), -1)))))
-        x = self.dropout5((F.relu(self.b5(self.ll2(x)))))
+        x = self.dropout5((F.relu(self.bn5(self.ll2(x)))))
         x = self.t1(x) 
         iden = Variable(torch.from_numpy(np.eye(3).flatten().astype(np.float32)))
         if x.is_cuda or x.is_mps:
