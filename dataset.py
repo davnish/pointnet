@@ -91,11 +91,13 @@ def load_data(grid_size, points_taken):
     return tiles_np, tiles_np_labels
 
 # def visualize():
-#     las_xyz, _ = load_data(25, 1028)
-#     pcd = o3d.geometry.PointCloud()
-#     pcd.points = o3d.utility.Vector3dVector(las_xyz[0])
-#     # pcd.colors = o3d.utility.Vector3dVector(give_colors(las_xyz[0], las_label[0], partition = 'train'))
-#     o3d.visualization.draw_geometries([pcd])
+#     # las_xyz, _ = load_data(25, 2048)
+#     las_xyz, _ = modelnet40()
+#     print(las_xyz.shape)
+    # pcd = o3d.geometry.PointCloud()
+    # pcd.points = o3d.utility.Vector3dVector(las_xyz[0])
+    # # pcd.colors = o3d.utility.Vector3dVector(give_colors(las_xyz[0], las_label[0], partition = 'train'))
+    # o3d.visualization.draw_geometries([pcd])
 
 
 
@@ -120,3 +122,4 @@ if __name__ == '__main__':
     # print()
     train = modelnet40()
     print(train[0])
+    # visualize()

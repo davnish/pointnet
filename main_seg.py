@@ -14,8 +14,8 @@ torch.manual_seed(42)
 
 grid_size = 20 # The size of the grid from 500mx500m 
 points_taken = 4096 # Points taken per each grid 
-batch_size = 16
-lr = 1e-3
+batch_size = 8
+lr = 1e-4
 epoch = 200
 eval_train_test = 10
 n_embd = 128 
@@ -33,7 +33,7 @@ device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is
 
 # Splitting the data
 _modelnet40 = modelnet40()
-train_dataset, test_dataset = random_split(_modelnet40, [0.9, 0.1])
+train_dataset, test_dataset = random_split(_modelnet40, [0.8, 0.2])
 
 # Loading the data
 train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, drop_last=True)
