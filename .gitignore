@@ -4,3 +4,5 @@ seg/
 cls/
 __pycache__/
 .DS_Store
+*.sh
+basic.py

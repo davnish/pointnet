@@ -3,9 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
-from model import pct, pointnet_seg
-from dataset import Dales, modelnet40, tald
-import argparse
+from model import pct, pointnet
+from dataset import Dales, modelnet40
 import time
 from sklearn.metrics import accuracy_score
 import numpy as np
@@ -13,10 +12,10 @@ torch.manual_seed(42)
 
 # Hyperparameter----
 
-grid_size = 5 # The size of the grid from 500mx500m 
+grid_size = 20 # The size of the grid from 500mx500m 
 points_taken = 2048 # Points taken per each grid 
 batch_size = 8
-lr = 1e-3
+lr = 1e-4
 epoch = 100
 eval_train_test = 10
 n_embd = 128 
@@ -29,18 +28,12 @@ dropout = 0.3
 
 # ------------------
 
-# parser = argparse.ArgumentParser()
-
-# parser.add_argument('--dataset', type = str, dest='dataset',default='Dales', help="Dataset")
-# args = parser.parse_args()
-# print(args.dataset)
-
 # Setting Device
 device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 
 # Splitting the data
-_dales = tald(grid_size=grid_size, points_taken=points_taken)
-train_dataset, test_dataset = random_split(_dales, [0.8, 0.2])
+_modelnet40 = modelnet40()
+train_dataset, test_dataset = random_split(_modelnet40, [0.8, 0.2])
 
 # Loading the data
 train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, drop_last=True)
@@ -48,7 +41,7 @@ test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False,
 
 # Initialize the model
 # model = pct(n_embd, n_heads, n_layers)
-model = pointnet_seg(n_embd, dropout)
+model = pointnet(n_embd, dropout)
 
 # loss, Optimizer, Scheduler
 loss_fn = nn.CrossEntropyLoss()
@@ -65,11 +58,9 @@ def train_loop(loader,see_batch_loss = False):
     y_preds = []
     for batch, (data, label) in enumerate(loader):
         data, label = data.to(device), label.to(device).squeeze()
-        data = data.transpose(1, 2)
+        data = data.transpose(1,2)
 
         logits = model(data)
-        # print(logits.size())
-        logits = logits.transpose(1, 2)
         # print(logits.size())
         optimizer.zero_grad()
 
@@ -84,7 +75,6 @@ def train_loop(loader,see_batch_loss = False):
 
         y_true.extend(label.view(-1).cpu().tolist())
         y_preds.extend(preds.detach().cpu().tolist())
-        # print(np.unique(y_preds))
         
         if see_batch_loss:
             if batch%batch_eval_inter == 0:
@@ -103,8 +93,7 @@ def test_loop(loader):
         data = data.transpose(1,2)
 
         logits = model(data)
-        logits = logits.transpose(1,2)
-        
+
         loss = loss_fn(logits.reshape(-1, logits.size(-1)), label.view(-1))
         
         total_loss+=loss.item()

@@ -1,13 +1,36 @@
 import torch
 from torch.utils.data import Dataset
-# import pandas as pd
+import pandas as pd
 # import glob
 import os
 import numpy as np
 import laspy
 import h5py
 
-# import open3d as o3d
+import open3d as o3d
+
+class tald(Dataset):
+    def __init__(self, grid_size, points_taken):
+
+        if os.path.exists(os.path.join("data", "tald", f"tald_tt_{grid_size}_{points_taken}.npz")): # this starts from the system's path
+            tiles = np.load(os.path.join("data", "tald" , f"tald_tt_{grid_size}_{points_taken}.npz"))
+            self.data = tiles['x']
+            self.label = tiles['y']
+        else:
+            df = pd.read_csv(os.path.join("data", "tald", "test_features.txt"))
+            df["Classification"].replace([3., 2., 6., 5. , 4., 7.], [0,1,2,3,4,5], inplace=True)
+            self.data, self.label = grid_als(grid_size, points_taken, df.iloc[:,[0,1,2]].to_numpy(), df["Classification"].to_numpy())
+
+            np.savez(os.path.join("data", "tald", f"tald_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
+    
+    def __getitem__(self, idx):
+        pointcloud = torch.tensor(self.data[idx]).float()
+        label = torch.tensor(self.label[idx], dtype = torch.uint8)
+
+        return pointcloud, label
+    
+    def __len__(self):
+        return self.data.shape[0]
 
 class modelnet40(Dataset):
     def __init__(self):
@@ -22,8 +45,15 @@ class modelnet40(Dataset):
 
 class Dales(Dataset):
     def __init__(self, grid_size, points_taken, partition='train'):
-        self.data, self.label = load_data(grid_size, points_taken)
-
+        if os.path.exists(os.path.join("data", "Dales", f"dales_tt_{grid_size}_{points_taken}.npz")): # this starts from the system's path
+            tiles = np.load(os.path.join("data", "Dales" , f"dales_tt_{grid_size}_{points_taken}.npz"))
+            self.data = tiles['x']
+            self.label = tiles['y']
+        else:
+            las = laspy.read(os.path.join("data", "Dales", "5085_54320.las"))
+            las_classification = las_label_replace(las)
+            self.data, self.label = grid_als('dales', grid_size, points_taken, las.xyz, las_classification)
+            np.savez(os.path.join("data", "dales", f"dales_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
 
     def __getitem__(self, item):
         pointcloud = torch.tensor(self.data[item]).float()
@@ -41,19 +71,10 @@ def las_label_replace(las):
         las_classification[las_classification == old] = new
     return las_classification
 
-def load_data(grid_size, points_taken):
-    # path = "data"
-    if os.path.exists(os.path.join("data", f"train_test_{grid_size}_{points_taken}.npz")): # this starts from the system's path
-        tiles = np.load(os.path.join("data", f"train_test_{grid_size}_{points_taken}.npz"))
-        tiles_np = tiles['x']
-        tiles_np_labels = tiles['y']
-    else:
-        las = laspy.read(os.path.join("data", "5140_54445.las"))
-        las_classification = las_label_replace(las)
-        # grid_size = grid_size
+def grid_als(grid_size, points_taken, data, classification):
         grid_point_clouds = {}
         grid_point_clouds_label = {}
-        for point, label in zip(las.xyz, las_classification):
+        for point, label in zip(data, classification):
             grid_x = int(point[0] / grid_size)
             grid_y = int(point[1] / grid_size)
 
@@ -84,20 +105,18 @@ def load_data(grid_size, points_taken):
                 tiles_labels.append(label[:points_taken])
 
         tiles_np = np.asarray(tiles)
-
         tiles_np_labels = np.asarray(tiles_labels)
-        np.savez(os.path.join("data", f"train_test_{grid_size}_{points_taken}.npz"), x = tiles_np, y = tiles_np_labels)
 
-    return tiles_np, tiles_np_labels
+        return tiles_np, tiles_np_labels
 
-# def visualize():
-#     # las_xyz, _ = load_data(25, 2048)
-#     las_xyz, _ = modelnet40()
-#     print(las_xyz.shape)
-    # pcd = o3d.geometry.PointCloud()
-    # pcd.points = o3d.utility.Vector3dVector(las_xyz[0])
-    # # pcd.colors = o3d.utility.Vector3dVector(give_colors(las_xyz[0], las_label[0], partition = 'train'))
-    # o3d.visualization.draw_geometries([pcd])
+def visualize(data):
+    # las_xyz, _ = load_data(25, 2048)
+    # las_xyz, _ = modelnet40()
+    # print(data.shape)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(data[10][0])
+    # pcd.colors = o3d.utility.Vector3dVector(give_colors(las_xyz[0], las_label[0], partition = 'train'))
+    o3d.visualization.draw_geometries([pcd])
 
 
 
@@ -120,6 +139,6 @@ if __name__ == '__main__':
     # print(len(test))
     # a = DataLoader(train, shuffle = True, batch_size = 8)
     # print()
-    train = modelnet40()
+    train = tald(25, 2048)
     print(train[0])
-    # visualize()
+    visualize(train)
