@@ -18,7 +18,7 @@ class tald(Dataset):
             self.label = tiles['y']
         else:
             df = pd.read_csv(os.path.join("data", "tald", "test_features.txt"))
-            df["Classification"].replace([3., 2., 6., 5. , 4., 7.], [0,1,2,3,4,5], inplace=True)
+            df["Classification"].replace([3., 2., 6., 5. , 4., 7.], [0, 1, 2, 3, 4, 5], inplace=True)
             self.data, self.label = grid_als(grid_size, points_taken, df.iloc[:,[0,1,2]].to_numpy(), df["Classification"].to_numpy())
 
             np.savez(os.path.join("data", "tald", f"tald_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
@@ -139,6 +139,6 @@ if __name__ == '__main__':
     # print(len(test))
     # a = DataLoader(train, shuffle = True, batch_size = 8)
     # print()
-    train = tald(25, 2048)
+    train = Dales(25, 2048)
     print(train[0])
     visualize(train)
