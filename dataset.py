@@ -121,7 +121,7 @@ def grid_als(grid_size, points_taken, data, classification):
 
 
 if __name__ == '__main__':
-
+    print(1)
     # with h5py.File('data/modelnet40_ply_hdf5_2048/ply_data_train0.h5') as F:
     #     data = F['data'][()]
     #     label = F['label'][()]
@@ -139,6 +139,6 @@ if __name__ == '__main__':
     # print(len(test))
     # a = DataLoader(train, shuffle = True, batch_size = 8)
     # print()
-    train = Dales(25, 2048)
-    print(train[0])
-    visualize(train)
+    # train = Dales(25, 2048)
+    # print(train[0])
+    # visualize(train)
