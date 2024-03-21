@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from torch.autograd import Variable
+from util import sample_and_group
 torch.manual_seed(42)
 
 
@@ -33,6 +34,52 @@ class pointnet(nn.Module):
         
         t1 = self.t1(x)
         x =  torch.bmm(t1, x)
+
+        x = F.relu(self.bn1(self.conv1(x)))
+       
+        t2 = self.t2(x)
+        x = torch.bmm(t2, x)
+
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.adaptive_max_pool1d(x, 1).view(x.size(0), -1)
+        
+        x = F.relu(self.bn4(self.ll1(x)))
+        x = F.relu(self.bn5(self.ll2(x)))
+        x = self.output(x)
+        return x
+    
+class pointnet2cls(nn.Module):
+    def __init__(self, n_embd, dropout):
+        super(pointnet, self).__init__()
+        self.conv1 = nn.Conv1d(3, 64, kernel_size=1)
+        self.conv2 = nn.Conv1d(64, 128, kernel_size=1)
+        self.conv3 = nn.Conv1d(128, 1024, kernel_size=1)
+
+        self.ll1 = nn.Linear(1024, 512)
+        self.ll2 = nn.Linear(512, 256)
+        self.output = nn.Linear(256, 40) # This 40 is for modelnet40
+
+        self.t1 = T1(dropout)
+        self.t2 = T2(dropout)
+
+        self.bn1 = nn.BatchNorm1d(64)
+        self.bn2 = nn.BatchNorm1d(128)
+        self.bn3 = nn.BatchNorm1d(1024)
+        
+        self.bn4 = nn.BatchNorm1d(512)
+        self.bn5 = nn.BatchNorm1d(256)
+
+
+    
+    def forward(self, x):
+        xyz = x
+        
+        
+        t1 = self.t1(x)
+        x =  torch.bmm(t1, x)
+
+        x = sample_and_group(npoint=1024, nsample=32, xyz = xyz, points=x)
 
         x = F.relu(self.bn1(self.conv1(x)))
        

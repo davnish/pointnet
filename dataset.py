@@ -7,7 +7,7 @@ import numpy as np
 import laspy
 import h5py
 
-import open3d as o3d
+# import open3d as o3d
 
 class tald(Dataset):
     def __init__(self, grid_size, points_taken):
@@ -109,14 +109,14 @@ def grid_als(grid_size, points_taken, data, classification):
 
         return tiles_np, tiles_np_labels
 
-def visualize(data):
-    # las_xyz, _ = load_data(25, 2048)
-    # las_xyz, _ = modelnet40()
-    # print(data.shape)
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(data[10][0])
-    # pcd.colors = o3d.utility.Vector3dVector(give_colors(las_xyz[0], las_label[0], partition = 'train'))
-    o3d.visualization.draw_geometries([pcd])
+# def visualize(data):
+#     # las_xyz, _ = load_data(25, 2048)
+#     # las_xyz, _ = modelnet40()
+#     # print(data.shape)
+#     pcd = o3d.geometry.PointCloud()
+#     pcd.points = o3d.utility.Vector3dVector(data[10][0])
+#     # pcd.colors = o3d.utility.Vector3dVector(give_colors(las_xyz[0], las_label[0], partition = 'train'))
+#     o3d.visualization.draw_geometries([pcd])
 
 
 

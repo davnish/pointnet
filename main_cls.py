@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
-from model import pct, pointnet
+# from model import pct, pointnet
+from model_pct import PointTransformerCls
 from dataset import Dales, modelnet40
 import time
 from sklearn.metrics import accuracy_score
@@ -41,7 +42,7 @@ test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False,
 
 # Initialize the model
 # model = pct(n_embd, n_heads, n_layers)
-model = pointnet(n_embd, dropout)
+model = PointTransformerCls()
 
 # loss, Optimizer, Scheduler
 loss_fn = nn.CrossEntropyLoss()
@@ -58,7 +59,7 @@ def train_loop(loader,see_batch_loss = False):
     y_preds = []
     for batch, (data, label) in enumerate(loader):
         data, label = data.to(device), label.to(device).squeeze()
-        data = data.transpose(1,2)
+        # data = data.transpose(1,2)
 
         logits = model(data)
         # print(logits.size())
@@ -90,7 +91,7 @@ def test_loop(loader):
     y_preds = []
     for data, label in loader:
         data, label = data.to(device), label.to(device).squeeze()
-        data = data.transpose(1,2)
+        # data = data.transpose(1,2)
 
         logits = model(data)
 

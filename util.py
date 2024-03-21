@@ -1,47 +1,130 @@
 from dataset import Dales, modelnet40
-import open3d as o3d
+# import open3d as o3d
 import numpy as np
 import torch
 torch.manual_seed(42)
 
+def square_distance(src, dst):
+    """
+    Calculate Euclid distance between each two points.
+    src^T * dst = xn * xm + yn * ym + zn * zm；
+    sum(src^2, dim=-1) = xn*xn + yn*yn + zn*zn;
+    sum(dst^2, dim=-1) = xm*xm + ym*ym + zm*zm;
+    dist = (xn - xm)^2 + (yn - ym)^2 + (zn - zm)^2
+         = sum(src**2,dim=-1)+sum(dst**2,dim=-1)-2*src^T*dst
+    Input:
+        src: source points, [B, N, C]
+        dst: target points, [B, M, C]
+    Output:
+        dist: per-point square distance, [B, N, M]
+    """
+    return torch.sum((src[:, :, None] - dst[:, None]) ** 2, dim=-1)
 
-def cal_mx_distance(pnt, data):
-    dist = []
-    euclidean_dist = torch.sum((data - pnt)**2)
-    dist.append(euclidean_dist)
+def index_points(points, idx):
+    """
+    Input:
+        points: input points data, [B, N, C]
+        idx: sample index data, [B, S, [K]]
+    Return:
+        new_points:, indexed points data, [B, S, [K], C]
+    """
+    raw_size = idx.size()
+    idx = idx.reshape(raw_size[0], -1)
+    res = torch.gather(points, 1, idx[..., None].expand(-1, -1, points.size(-1)))
+    return res.reshape(*raw_size, -1)
+
+
+def farthest_point_sample(xyz, npoint):
+    """
+    Input:
+        xyz: pointcloud data, [B, N, 3]
+        npoint: number of samples
+    Return:
+        centroids: sampled pointcloud index, [B, npoint]
+    """
+    device = xyz.device
+    B, N, C = xyz.shape
+    centroids = torch.zeros(B, npoint, dtype=torch.long).to(device)
+    distance = torch.ones(B, N).to(device) * 1e10
+    farthest = torch.randint(0, N, (B,), dtype=torch.long).to(device)
+    batch_indices = torch.arange(B, dtype=torch.long).to(device)
+    for i in range(npoint):
+        centroids[:, i] = farthest
+        centroid = xyz[batch_indices, farthest, :].view(B, 1, 3)
+        dist = torch.sum((xyz - centroid) ** 2, -1)
+        distance = torch.min(distance, dist)
+        farthest = torch.max(distance, -1)[1]
+    return centroids
+
+
+def sample_and_group(npoint, nsample, xyz, points):
+    B, N, C = xyz.shape
+    S = npoint 
     
-    dist = torch.tensor(dist)
-    return data[torch.argmax(dist)]
+    fps_idx = farthest_point_sample(xyz, npoint) # [B, npoint]
+
+    new_xyz = index_points(xyz, fps_idx) 
+    new_points = index_points(points, fps_idx)
+
+    dists = square_distance(new_xyz, xyz)  # B x npoint x N
+    idx = dists.argsort()[:, :, :nsample]  # B x npoint x K
+
+    grouped_points = index_points(points, idx)
+    grouped_points_norm = grouped_points - new_points.view(B, S, 1, -1)
+    new_points = torch.cat([grouped_points_norm, new_points.view(B, S, 1, -1).repeat(1, 1, nsample, 1)], dim=-1)
+    return new_xyz, new_points
+
+def query_ball_point(radius, nsample, xyz, new_xyz):
+    """
+    Input:
+        radius: local region radius
+        nsample: max sample number in local region
+        xyz: all points, [B, N, 3]
+        new_xyz: query points, [B, S, 3]
+    Return:
+        group_idx: grouped points index, [B, S, nsample]
+    """
+    device = xyz.device
+    B, N, C = xyz.shape
+    _, S, _ = new_xyz.shape
+    group_idx = torch.arange(N, dtype=torch.long).to(device).view(1, 1, N).repeat([B, S, 1])
+    sqrdists = square_distance(new_xyz, xyz)
+    group_idx[sqrdists > radius ** 2] = N
+    group_idx = group_idx.sort(dim=-1)[0][:, :, :nsample]
+    group_first = group_idx[:, :, 0].view(B, S, 1).repeat([1, 1, nsample])
+    mask = group_idx == N
+    group_idx[mask] = group_first[mask]
+    return group_idx
 
 
-def fps(points, num_points):
-    points = np.asarray(points)
-    sampled_pnts = np.zeros(num_points, dtype='int') # Sampled points
-    pnts_left = np.arange(len(points), dtype='int') # points not sampled 
-    dist = np.ones_like(pnts_left) * float('inf') # dist array
+# def fps(points, num_points):
+#     points = np.asarray(points)
+#     sampled_pnts = np.zeros(num_points, dtype='int') # Sampled points
+#     pnts_left = np.arange(len(points), dtype='int') # points not sampled 
+#     dist = np.ones_like(pnts_left) * float('inf') # dist array
 
-    selected = 0 # Selected current point
-    sampled_pnts[0] = selected
-    pnts_left = np.delete(pnts_left, selected)
-    # dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
+#     selected = 0 # Selected current point
+#     sampled_pnts[0] = selected
+#     pnts_left = np.delete(pnts_left, selected)
+#     # dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
 
-    for i in range(1, num_points):
+#     for i in range(1, num_points):
         
 
-        selected_dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
+#         selected_dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
-        # temp = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
+#         # temp = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
-        dist[pnts_left] = np.minimum(dist[pnts_left], selected_dist)
-        # print(dist)
-        selected = np.argmax(dist[pnts_left], axis = 0)
-        # print(selected)
-        sampled_pnts[i] = pnts_left[selected]
+#         dist[pnts_left] = np.minimum(dist[pnts_left], selected_dist)
+#         # print(dist)
+#         selected = np.argmax(dist[pnts_left], axis = 0)
+#         # print(selected)
+#         sampled_pnts[i] = pnts_left[selected]
 
-        pnts_left = np.delete(pnts_left, selected)
+#         pnts_left = np.delete(pnts_left, selected)
 
-    return points[sampled_pnts]
+#     return points[sampled_pnts]
 
 
 if __name__ == "__main__":
@@ -60,8 +143,8 @@ if __name__ == "__main__":
     # # print(train[0][0][0])
 
     # print(train)
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(train)
+    # pcd = o3d.geometry.PointCloud()
+    # pcd.points = o3d.utility.Vector3dVector(train)
     # torch.manual_seed(42)
 
     # a = torch.randint(10, (5,1))
@@ -69,4 +152,4 @@ if __name__ == "__main__":
 
     # c = np.minimum(a,b)
     # print(a, b, c)
-    o3d.visualization.draw_geometries([pcd])
+    # o3d.visualization.draw_geometries([pcd])
