@@ -53,7 +53,7 @@ class Dales(Dataset):
             las = laspy.read(os.path.join("data", "Dales", "5085_54320.las"))
             las_classification = las_label_replace(las)
             self.data, self.label = grid_als(grid_size, points_taken, las.xyz, las_classification)
-            np.savez(os.path.join("data", "dales", f"dales_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
+            np.savez(os.path.join("data", "Dales", f"dales_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
 
     def __getitem__(self, item):
         pointcloud = torch.tensor(self.data[item]).float()
