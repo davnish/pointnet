@@ -15,7 +15,7 @@ torch.manual_seed(42)
 
 grid_size = 5 # The size of the grid from 500mx500m 
 points_taken = 2048 # Points taken per each grid 
-batch_size = 8
+batch_size = 32
 lr = 1e-3
 epoch = 100
 eval_train_test = 10

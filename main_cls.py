@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 # from model import pct, pointnet
-from model_pct import PointTransformerCls
+from model_pct import PointTransformerSeg
 from dataset import Dales, modelnet40
 import time
 from sklearn.metrics import accuracy_score
@@ -33,7 +33,7 @@ dropout = 0.3
 device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 
 # Splitting the data
-_modelnet40 = modelnet40()
+_modelnet40 = Dales(grid_size=grid_size, points_taken=points_taken)
 train_dataset, test_dataset = random_split(_modelnet40, [0.8, 0.2])
 
 # Loading the data
@@ -42,7 +42,7 @@ test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False,
 
 # Initialize the model
 # model = pct(n_embd, n_heads, n_layers)
-model = PointTransformerCls()
+model = PointTransformerSeg()
 
 # loss, Optimizer, Scheduler
 loss_fn = nn.CrossEntropyLoss()
