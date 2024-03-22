@@ -17,9 +17,27 @@ def sample_and_group(npoint, nsample, xyz, points):
 
     grouped_points = index_points(points, idx)
     grouped_points_norm = grouped_points - new_points.view(B, S, 1, -1)
+    # print(grouped_points.size())
     new_points = torch.cat([grouped_points_norm, new_points.view(B, S, 1, -1).repeat(1, 1, nsample, 1)], dim=-1)
     return new_xyz, new_points
 
+def sample_and_group_all(nsample, xyz, points):
+    B, N, C = xyz.shape
+    S = N
+    
+    # fps_idx = farthest_point_sample(xyz, npoint) # [B, npoint]
+
+    # new_xyz = index_points(xyz, fps_idx) 
+    new_points = points
+
+    dists = square_distance(xyz, xyz)  # B x npoint x N
+    idx = dists.argsort()[:, :, :nsample]  # B x npoint x K
+
+    grouped_points = index_points(points, idx)
+    grouped_points_norm = grouped_points - new_points.view(B, S, 1, -1)
+    # print(grouped_points.size())
+    new_points = torch.cat([grouped_points_norm, new_points.view(B, S, 1, -1).repeat(1, 1, nsample, 1)], dim=-1)
+    return xyz, new_points
 
 class Local_op(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -31,13 +49,13 @@ class Local_op(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        b, n, s, d = x.size()  # torch.Size([32, 512, 32, 6]) 
+        b, n, s, d = x.size()  # torch.Size([32, 512, 32, 128]) 
         x = x.permute(0, 1, 3, 2)
         x = x.reshape(-1, d, s)
         batch_size, _, N = x.size()
         x = self.relu(self.bn1(self.conv1(x))) # B, D, N
         x = self.relu(self.bn2(self.conv2(x))) # B, D, N
-        x = torch.max(x, 2)[0]
+        x = torch.max(x, 2)[0] # Getting the global just like in pointnet
         x = x.view(batch_size, -1)
         x = x.reshape(b, n, -1).permute(0, 2, 1)
         return x
@@ -167,7 +185,7 @@ class PointTransformerSeg(nn.Module):
         self.conv2 = nn.Conv1d(64, 64, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(64)
-        self.gather_local_0 = Local_op(in_channels=128, out_channels=128)
+        self.gather_local_0 = Local_op(in_channels=128, out_channels=256)
         self.gather_local_1 = Local_op(in_channels=256, out_channels=256)
         self.pt_last = StackedAttention()
 
@@ -191,7 +209,7 @@ class PointTransformerSeg(nn.Module):
         self.bn7 = nn.BatchNorm1d(256)
         self.dp2 = nn.Dropout(p=0.5)
         self.linear3 = nn.Conv1d(256, output_channels, 1)
-        
+
     def forward(self, x):
         xyz = x[..., :3]
         x = x.permute(0, 2, 1)
@@ -199,13 +217,14 @@ class PointTransformerSeg(nn.Module):
         x = self.relu(self.bn1(self.conv1(x))) # B, D, N
         x = self.relu(self.bn2(self.conv2(x))) # B, D, N
         x = x.permute(0, 2, 1)
-        new_xyz, new_feature = sample_and_group(npoint=2048, nsample=32, xyz=xyz, points=x)         
-        feature_0 = self.gather_local_0(new_feature)
-        feature = feature_0.permute(0, 2, 1)
-        new_xyz, new_feature = sample_and_group(npoint=2048, nsample=32, xyz=new_xyz, points=feature) 
-        feature_1 = self.gather_local_1(new_feature)
-        
+        new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=xyz, points=x)         
+        feature_1 = self.gather_local_0(new_feature)
+        # feature = feature_0.permute(0, 2, 1)
+        # new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=new_xyz, points=feature) 
+        # feature_1 = self.gather_local_1(new_feature)
+        # print(feature_1.size())
         x = self.pt_last(feature_1)
+        # print(x.size())
         x = torch.cat([x, feature_1], dim=1)
         x = self.conv_fuse(x)
         x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
@@ -224,12 +243,24 @@ class PointTransformerSeg(nn.Module):
         return x
     
 if __name__ == '__main__':
-    a = torch.randn((8, 2048, 3))
-    # model = nn.Linear(2048, 512)
-    # x = model(a)
+    xyz = torch.randn((8, 2048, 3))
+    points = torch.randn((8, 2048, 64))
+    x,y = sample_and_group_all(nsample=32, xyz = xyz, points = points)
+    print(x.size(), y.size())
+    # model = PointTransformerSeg()
+    # x = model(xyz)
     # print(x.size())
-    # a = torch.max(a, 2)[0].repeat(1, 1, a.size(-1))
+
+    # model = StackedAttention()
+    # x = model(xyz)
+    # print(x.size())
+    # # points = torch.randn((8,2048,64))
+    # # new_xyz, new_points = sample_and_group(npoint=2048, nsample=32, xyz = xyz, points = points)
+    # # print(new_xyz.size())
+    # # print(new_points.size())
+    # model = Local_op(128, 128)
+    # x = model(xyz)
+    # print(x.size())
+    # a = torch.max(xyz, dim = 2)[0]
+    # a = a.view(8,2048,-1)
     # print(a.size())
-    model = PointTransformerSeg()
-    x = model(a)
-    print(x)
