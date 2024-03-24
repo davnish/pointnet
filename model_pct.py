@@ -185,12 +185,12 @@ class PointTransformerSeg(nn.Module):
         self.conv2 = nn.Conv1d(64, 64, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(64)
-        self.gather_local_0 = Local_op(in_channels=128, out_channels=256)
+        self.gather_local_0 = Local_op(in_channels=128, out_channels=128)
         self.gather_local_1 = Local_op(in_channels=256, out_channels=256)
-        self.pt_last = StackedAttention()
+        self.pt_last = StackedAttention(channels=128)
 
         self.relu = nn.ReLU()
-        self.conv_fuse = nn.Sequential(nn.Conv1d(1024, 1024, kernel_size=1, bias=False),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(640, 1024, kernel_size=1, bias=False),
                                    nn.BatchNorm1d(1024),
                                    nn.LeakyReLU(negative_slope=0.2))
 
@@ -226,9 +226,10 @@ class PointTransformerSeg(nn.Module):
         x = self.pt_last(feature_1)
         # print(x.size())
 
-        # x = torch.cat([x, feature_1], dim=1)
-        feature_1 = feature_1.repeat(1, 4, 1)
-        x = x + feature_1
+        x = torch.cat([x, feature_1], dim=1)
+
+        # feature_1 = feature_1.repeat(1, 4, 1)
+        # x = x + feature_1
 
 
         x = self.conv_fuse(x)

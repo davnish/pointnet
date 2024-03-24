@@ -97,34 +97,34 @@ def query_ball_point(radius, nsample, xyz, new_xyz):
     return group_idx
 
 
-def fps(points, num_points):
-    points = np.asarray(points)
-    sampled_pnts = np.zeros(num_points, dtype='int') # Sampled points
-    pnts_left = np.arange(len(points), dtype='int') # points not sampled 
-    dist = np.ones_like(pnts_left) * float('inf') # dist array
+# def fps(points, num_points):
+#     points = np.asarray(points)
+#     sampled_pnts = np.zeros(num_points, dtype='int') # Sampled points
+#     pnts_left = np.arange(len(points), dtype='int') # points not sampled 
+#     dist = np.ones_like(pnts_left) * float('inf') # dist array
 
-    selected = np.random.randint(0, len(points)) # Selected current point
-    sampled_pnts[0] = selected
-    pnts_left = np.delete(pnts_left, selected)
-    # dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
+#     selected = np.random.randint(0, len(points)) # Selected current point
+#     sampled_pnts[0] = selected
+#     pnts_left = np.delete(pnts_left, selected)
+#     # dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
 
-    for i in range(1, num_points):
+#     for i in range(1, num_points):
         
 
-        selected_dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
+#         selected_dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
-        # temp = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
+#         # temp = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
-        dist[pnts_left] = np.minimum(dist[pnts_left], selected_dist)
-        # print(dist)
-        selected = np.argmax(dist[pnts_left], axis = 0)
-        # print(selected)
-        sampled_pnts[i] = pnts_left[selected]
+#         dist[pnts_left] = np.minimum(dist[pnts_left], selected_dist)
+#         # print(dist)
+#         selected = np.argmax(dist[pnts_left], axis = 0)
+#         # print(selected)
+#         sampled_pnts[i] = pnts_left[selected]
 
-        pnts_left = np.delete(pnts_left, selected)
+#         pnts_left = np.delete(pnts_left, selected)
 
-    return sampled_pnts
+#     return sampled_pnts
 
 
 if __name__ == "__main__":
