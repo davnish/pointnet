@@ -44,7 +44,7 @@ class modelnet40(Dataset):
         return self.data.shape[0]
 
 class Dales(Dataset):
-    def __init__(self, grid_size, points_taken, partition='train'):
+    def __init__(self, device, grid_size, points_taken, partition='train'):
         if os.path.exists(os.path.join("data", "Dales", f"dales_tt_{grid_size}_{points_taken}.npz")): # this starts from the system's path
             tiles = np.load(os.path.join("data", "Dales" , f"dales_tt_{grid_size}_{points_taken}.npz"))
             self.data = tiles['x']
@@ -52,7 +52,7 @@ class Dales(Dataset):
         else:
             las = laspy.read(os.path.join("data", "Dales", "5085_54320.las"))
             las_classification = las_label_replace(las)
-            self.data, self.label = grid_als(grid_size, points_taken, las.xyz, las_classification)
+            self.data, self.label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
             np.savez(os.path.join("data", "Dales", f"dales_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
 
     def __getitem__(self, item):
@@ -71,7 +71,7 @@ def las_label_replace(las):
         las_classification[las_classification == old] = new
     return las_classification
 
-def grid_als(grid_size, points_taken, data, classification, device= 'cuda'):
+def grid_als(device, grid_size, points_taken, data, classification):
     grid_point_clouds = {}
     grid_point_clouds_label = {}
     for point, label in zip(data, classification):

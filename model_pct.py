@@ -28,15 +28,15 @@ def sample_and_group_all(nsample, xyz, points):
     # fps_idx = farthest_point_sample(xyz, npoint) # [B, npoint]
 
     # new_xyz = index_points(xyz, fps_idx) 
-    new_points = points
+    # new_points = points
 
     dists = square_distance(xyz, xyz)  # B x npoint x N
     idx = dists.argsort()[:, :, :nsample]  # B x npoint x K
 
     grouped_points = index_points(points, idx)
-    grouped_points_norm = grouped_points - new_points.view(B, S, 1, -1)
+    grouped_points_norm = grouped_points - points.view(B, S, 1, -1)
     # print(grouped_points.size())
-    new_points = torch.cat([grouped_points_norm, new_points.view(B, S, 1, -1).repeat(1, 1, nsample, 1)], dim=-1)
+    new_points = torch.cat([grouped_points_norm, points.view(B, S, 1, -1).repeat(1, 1, nsample, 1)], dim=-1)
     return xyz, new_points
 
 class Local_op(nn.Module):
@@ -49,7 +49,7 @@ class Local_op(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        b, n, s, d = x.size()  # torch.Size([32, 512, 32, 64]) 
+        b, n, s, d = x.size()  # torch.Size([32, 512, 32, 128]) 
         x = x.permute(0, 1, 3, 2)
         x = x.reshape(-1, d, s)
         batch_size, _, N = x.size()
@@ -156,10 +156,11 @@ class PointTransformerCls(nn.Module):
         x = self.relu(self.bn1(self.conv1(x))) # B, D, N
         x = self.relu(self.bn2(self.conv2(x))) # B, D, N
         x = x.permute(0, 2, 1)
-        new_xyz, new_feature = sample_and_group(npoint=512, nsample=32, xyz=xyz, points=x)         
+        new_xyz, new_feature = sample_and_group(npoint=128, nsample=32, xyz=xyz, points=x)         
         feature_0 = self.gather_local_0(new_feature)
         feature = feature_0.permute(0, 2, 1)
-        new_xyz, new_feature = sample_and_group(npoint=256, nsample=32, xyz=new_xyz, points=feature) 
+        
+        new_xyz, new_feature = sample_and_group(npoint=128, nsample=32, xyz=new_xyz, points=feature) 
         feature_1 = self.gather_local_1(new_feature)
         
         x = self.pt_last(feature_1)
@@ -217,15 +218,17 @@ class PointTransformerSeg(nn.Module):
         x = self.relu(self.bn1(self.conv1(x))) # B, D, N
         x = self.relu(self.bn2(self.conv2(x))) # B, D, N
         x = x.permute(0, 2, 1)
-        new_xyz, new_feature = sample_and_group_all(nsample=256, xyz=xyz, points=x)         
-        feature_1 = self.gather_local_0(new_feature)
-        # feature = feature_0.permute(0, 2, 1)
+        new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=xyz, points=x)         
+        feature_0 = self.gather_local_0(new_feature)
+        feature = feature_0.permute(0, 2, 1)
+
+        new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=new_xyz, points=feature) 
+        feature_1 = self.gather_local_1(new_feature)
+       
         # print(feature_1.size())
         
         x = self.pt_last(feature_1)
         
-        # new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=new_xyz, points=feature) 
-        # feature_1 = self.gather_local_1(new_feature)
         
         # print(x.size())
 
