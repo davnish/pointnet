@@ -229,7 +229,7 @@ class PointTransformerSeg(nn.Module):
         # feature = feature_1.permute(0, 2, 1)
 
         new_xyz, new_feature = sample_and_group_all(nsample=64, xyz=new_xyz, points=feature) 
-        feature_2 = self.gather_local_1(new_feature)
+        feature_2 = self.gather_local_2(new_feature)
        
         # print(feature_.size())
         
