@@ -1,13 +1,13 @@
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
-# import glob
+from util import farthest_point_sample, index_points
 import os
 import numpy as np
 import laspy
 import h5py
 
-# import open3d as o3d
+import open3d as o3d
 
 class tald(Dataset):
     def __init__(self, grid_size, points_taken):
@@ -71,57 +71,94 @@ def las_label_replace(las):
         las_classification[las_classification == old] = new
     return las_classification
 
-def grid_als(grid_size, points_taken, data, classification):
-        grid_point_clouds = {}
-        grid_point_clouds_label = {}
-        for point, label in zip(data, classification):
-            grid_x = int(point[0] / grid_size)
-            grid_y = int(point[1] / grid_size)
+def grid_als(grid_size, points_taken, data, classification, device= 'cuda'):
+    grid_point_clouds = {}
+    grid_point_clouds_label = {}
+    for point, label in zip(data, classification):
+        grid_x = int(point[0] / grid_size)
+        grid_y = int(point[1] / grid_size)
 
-            if (grid_x, grid_y) not in grid_point_clouds:
-                grid_point_clouds[(grid_x, grid_y)] = []
-                grid_point_clouds_label[(grid_x, grid_y)] = []
+        if (grid_x, grid_y) not in grid_point_clouds:
+            grid_point_clouds[(grid_x, grid_y)] = []
+            grid_point_clouds_label[(grid_x, grid_y)] = []
+        
+        grid_point_clouds[(grid_x, grid_y)].append(point)
+        grid_point_clouds_label[(grid_x, grid_y)].append(label)
+
+    tiles = []
+    tiles_labels = []
+
+    grid_lengths = [len(i) for i in grid_point_clouds.values()]
+    min_grid_points = (max(grid_lengths) - min(grid_lengths)) * 0.1
+    min_points = min(grid_lengths)
+
+    for grid, label in zip(grid_point_clouds.values(), grid_point_clouds_label.values()):
+
+        len_grid = len(grid)
+
+        if(len_grid>min_grid_points): # This is for excluding points which are at the boundry at the edges of the tiles
+
+            grid = np.asarray(grid)
+            label = np.asarray(label)
+
+            if(len_grid<points_taken): # This is for if the points in the grid are less then the required points for making the grid 
+                for _ in range(points_taken-len_grid):
+                    grid.append(grid[0])
+                    label.append(label[0])
+
             
-            grid_point_clouds[(grid_x, grid_y)].append(point)
-            grid_point_clouds_label[(grid_x, grid_y)].append(label)
+            grid = torch.tensor(grid).unsqueeze(0).to(device)
+            label = torch.tensor(label).unsqueeze(0).unsqueeze(2).to(device)
 
-        tiles = []
-        tiles_labels = []
+            tiles_idx = farthest_point_sample(grid, points_taken) # using fps
+            
+            # print(tiles_idx.size())
+            # print(grid.size())
+            # print(label.size())
 
-        grid_lengths = [len(i) for i in grid_point_clouds.values()]
-        min_grid_points = (max(grid_lengths) - min(grid_lengths)) * 0.1
-        min_points = min(grid_lengths)
+            
+            tiles.append(index_points(grid, tiles_idx).squeeze().cpu().numpy())
+            tiles_labels.append(index_points(label, tiles_idx).squeeze().cpu().numpy())
 
-        for grid, label in zip(grid_point_clouds.values(), grid_point_clouds_label.values()):
+    tiles_np = np.asarray(tiles)
+    tiles_np_labels = np.asarray(tiles_labels)
 
-            len_grid = len(grid)
+    return tiles_np, tiles_np_labels
 
-            if(len_grid - min_points>min_grid_points): # This is for excluding points which are at the boundry at the edges of the tiles
-                if(len_grid<points_taken): # This is for if the points in the grid are less then the required points for making the grid
-                    for _ in range(points_taken-len_grid):
-                        grid.append(grid[0])
-                        label.append(label[0])
-                tiles.append(grid[:points_taken])
-                tiles_labels.append(label[:points_taken])
-
-        tiles_np = np.asarray(tiles)
-        tiles_np_labels = np.asarray(tiles_labels)
-
-        return tiles_np, tiles_np_labels
-
-# def visualize(data):
-#     # las_xyz, _ = load_data(25, 2048)
-#     # las_xyz, _ = modelnet40()
-#     # print(data.shape)
-#     pcd = o3d.geometry.PointCloud()
-#     pcd.points = o3d.utility.Vector3dVector(data[10][0])
-#     # pcd.colors = o3d.utility.Vector3dVector(give_colors(las_xyz[0], las_label[0], partition = 'train'))
-#     o3d.visualization.draw_geometries([pcd])
+def visualize(data):
+    # las_xyz, _ = load_data(25, 2048)
+    # las_xyz, _ = modelnet40()
+    # print(data.shape)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(data)
+    pcd.colors = o3d.utility.Vector3dVector(np.random.randint(0,255, (3,)))
+    o3d.visualization.draw_geometries([pcd])
 
 
 
 if __name__ == '__main__':
-    print(1)
+    data = Dales(25, 2048)
+    # print(data[10][0])
+    # visualize(data[5][0].numpy())
+    vis = []
+    for i in range(len(data)):
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(data[i][0])
+        pcd.colors = o3d.utility.Vector3dVector(np.random.rand(1,3).repeat(2048, axis = 0))
+        vis.append(pcd)
+
+    # print(vis)
+    o3d.visualization.draw_geometries(vis)
+
+
+
+    # n = np.random.randn(5,3)
+    # print(n)
+
+    # print(n[[1,2,3]])
+    
+    # print(1)
+    
     # with h5py.File('data/modelnet40_ply_hdf5_2048/ply_data_train0.h5') as F:
     #     data = F['data'][()]
     #     label = F['label'][()]
@@ -142,3 +179,4 @@ if __name__ == '__main__':
     # train = Dales(25, 2048)
     # print(train[0])
     # visualize(train)
+    pass

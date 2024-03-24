@@ -1,4 +1,4 @@
-from dataset import Dales, modelnet40
+# from dataset import Dales, modelnet40
 # import open3d as o3d
 import numpy as np
 import torch
@@ -97,43 +97,66 @@ def query_ball_point(radius, nsample, xyz, new_xyz):
     return group_idx
 
 
-# def fps(points, num_points):
-#     points = np.asarray(points)
-#     sampled_pnts = np.zeros(num_points, dtype='int') # Sampled points
-#     pnts_left = np.arange(len(points), dtype='int') # points not sampled 
-#     dist = np.ones_like(pnts_left) * float('inf') # dist array
+def fps(points, num_points):
+    points = np.asarray(points)
+    sampled_pnts = np.zeros(num_points, dtype='int') # Sampled points
+    pnts_left = np.arange(len(points), dtype='int') # points not sampled 
+    dist = np.ones_like(pnts_left) * float('inf') # dist array
 
-#     selected = 0 # Selected current point
-#     sampled_pnts[0] = selected
-#     pnts_left = np.delete(pnts_left, selected)
-#     # dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
+    selected = np.random.randint(0, len(points)) # Selected current point
+    sampled_pnts[0] = selected
+    pnts_left = np.delete(pnts_left, selected)
+    # dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
 
-#     for i in range(1, num_points):
+    for i in range(1, num_points):
         
 
-#         selected_dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
+        selected_dist = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
-#         # temp = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
+        # temp = np.linalg.norm(points[pnts_left] - points[selected], ord = 2)
 
-#         dist[pnts_left] = np.minimum(dist[pnts_left], selected_dist)
-#         # print(dist)
-#         selected = np.argmax(dist[pnts_left], axis = 0)
-#         # print(selected)
-#         sampled_pnts[i] = pnts_left[selected]
+        dist[pnts_left] = np.minimum(dist[pnts_left], selected_dist)
+        # print(dist)
+        selected = np.argmax(dist[pnts_left], axis = 0)
+        # print(selected)
+        sampled_pnts[i] = pnts_left[selected]
 
-#         pnts_left = np.delete(pnts_left, selected)
+        pnts_left = np.delete(pnts_left, selected)
 
-#     return points[sampled_pnts]
+    return sampled_pnts
 
 
 if __name__ == "__main__":
-    train = modelnet40()
-    num_points = 10
-    print(train[0][0])
+
+    # a = torch.randn((2048, 3)).unsqueeze(0)
+    # labels = torch.rand((2048, 1)).unsqueeze(0)
+    
+    # b = farthest_point_sample(a, 512)
+    # print(a.size())
+    # print(b.size())
+    # print(labels.size())
+
+
+    # print(index_points(a, b).squeeze(0).size())
+    a = np.random.rand(5,3)
+
+    label = np.random.randint(0,8, (5,))
+    print(a)
+    print(label)
+    # print(a)
+    idx = fps(a, 2)
+    print(a[idx])
+    print(label[idx])
+    # print(a[0][b].size())
+    # print(a.unsqueeze(0), b)
+    pass
+    # train = modelnet40()
+    # num_points = 10
+    # print(train[0][0])
     # train = fps(train[0][0], 2048)
-    train = train[0][0]
-    print(train)
+    # train = train[0][0]
+    # print(train)
     # a = np.arange(10)
     # print(a)
     # a = np.delete(a, 2)
