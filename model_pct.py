@@ -232,12 +232,17 @@ class PointTransformerSeg(nn.Module):
         # print(a0.size())
 
         x = x.permute(0, 2, 1)
-        new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=xyz, points=x)         
+        new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=xyz, points=a0)         
         feature_0 = self.gather_local_0(new_feature)
         feature = feature_0.permute(0, 2, 1)
 
+        # a1 = self.sa_layer1(feature)
+
         new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=new_xyz, points=feature) 
         feature_1 = self.gather_local_1(new_feature)
+
+        # a2 = self.sa_layer2(feature_1.permute(0,2,1))
+
 
         # feature = feature_1.permute(0, 2, 1)
 
