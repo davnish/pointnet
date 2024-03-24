@@ -14,7 +14,7 @@ torch.manual_seed(42)
 # Hyperparameter----
 
 grid_size = 25 # The size of the grid from 500mx500m 
-points_taken = 2048 # Points taken per each grid 
+points_taken = 4096 # Points taken per each grid 
 batch_size = 8
 lr = 1e-4
 epoch = 100

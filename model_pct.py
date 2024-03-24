@@ -49,7 +49,7 @@ class Local_op(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        b, n, s, d = x.size()  # torch.Size([32, 512, 32, 128]) 
+        b, n, s, d = x.size()  # torch.Size([32, 512, 32, 64]) 
         x = x.permute(0, 1, 3, 2)
         x = x.reshape(-1, d, s)
         batch_size, _, N = x.size()
@@ -217,7 +217,7 @@ class PointTransformerSeg(nn.Module):
         x = self.relu(self.bn1(self.conv1(x))) # B, D, N
         x = self.relu(self.bn2(self.conv2(x))) # B, D, N
         x = x.permute(0, 2, 1)
-        new_xyz, new_feature = sample_and_group_all(nsample=64, xyz=xyz, points=x)         
+        new_xyz, new_feature = sample_and_group_all(nsample=256, xyz=xyz, points=x)         
         feature_1 = self.gather_local_0(new_feature)
         # feature = feature_0.permute(0, 2, 1)
         # print(feature_1.size())
