@@ -217,13 +217,16 @@ class PointTransformerSeg(nn.Module):
         x = self.relu(self.bn1(self.conv1(x))) # B, D, N
         x = self.relu(self.bn2(self.conv2(x))) # B, D, N
         x = x.permute(0, 2, 1)
-        new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=xyz, points=x)         
+        new_xyz, new_feature = sample_and_group_all(nsample=64, xyz=xyz, points=x)         
         feature_1 = self.gather_local_0(new_feature)
         # feature = feature_0.permute(0, 2, 1)
+        # print(feature_1.size())
+        
+        x = self.pt_last(feature_1)
+        
         # new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=new_xyz, points=feature) 
         # feature_1 = self.gather_local_1(new_feature)
-        # print(feature_1.size())
-        x = self.pt_last(feature_1)
+        
         # print(x.size())
 
         x = torch.cat([x, feature_1], dim=1)
