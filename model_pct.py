@@ -188,10 +188,11 @@ class PointTransformerSeg(nn.Module):
         self.bn2 = nn.BatchNorm1d(64)
         self.gather_local_0 = Local_op(in_channels=128, out_channels=128)
         self.gather_local_1 = Local_op(in_channels=256, out_channels=256)
+        # self.gather_local_2 = Local_op(in_channels=512, out_channels=512)
         self.pt_last = StackedAttention(channels=256)
 
         self.relu = nn.ReLU()
-        self.conv_fuse = nn.Sequential(nn.Conv1d(1280, 1024, kernel_size=1, bias=False),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(1152, 1024, kernel_size=1, bias=False),
                                    nn.BatchNorm1d(1024),
                                    nn.LeakyReLU(negative_slope=0.2))
 
@@ -224,6 +225,11 @@ class PointTransformerSeg(nn.Module):
 
         new_xyz, new_feature = sample_and_group_all(nsample=64, xyz=new_xyz, points=feature) 
         feature_1 = self.gather_local_1(new_feature)
+
+        # feature = feature_1.permute(0, 2, 1)
+
+        # new_xyz, new_feature = sample_and_group_all(nsample=64, xyz=new_xyz, points=feature) 
+        # feature_2 = self.gather_local_1(new_feature)
        
         # print(feature_1.size())
         
@@ -232,7 +238,7 @@ class PointTransformerSeg(nn.Module):
         
         # print(x.size())
 
-        x = torch.cat([x, feature_1], dim=1)
+        x = torch.cat([x, feature_0], dim=1)
 
         # feature_1 = feature_1.repeat(1, 4, 1)
         # x = x + feature_1
@@ -255,24 +261,4 @@ class PointTransformerSeg(nn.Module):
         return x
     
 if __name__ == '__main__':
-    xyz = torch.randn((8, 2048, 3))
-    points = torch.randn((8, 2048, 64))
-    x,y = sample_and_group_all(nsample=32, xyz = xyz, points = points)
-    print(x.size(), y.size())
-    # model = PointTransformerSeg()
-    # x = model(xyz)
-    # print(x.size())
-
-    # model = StackedAttention()
-    # x = model(xyz)
-    # print(x.size())
-    # # points = torch.randn((8,2048,64))
-    # # new_xyz, new_points = sample_and_group(npoint=2048, nsample=32, xyz = xyz, points = points)
-    # # print(new_xyz.size())
-    # # print(new_points.size())
-    # model = Local_op(128, 128)
-    # x = model(xyz)
-    # print(x.size())
-    # a = torch.max(xyz, dim = 2)[0]
-    # a = a.view(8,2048,-1)
-    # print(a.size())
+    pass
