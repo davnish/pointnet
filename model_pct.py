@@ -87,7 +87,7 @@ class SA_Layer(nn.Module):
     
 
 class StackedAttention(nn.Module):
-    def __init__(self, channels=256):
+    def __init__(self, channels):
         super().__init__()
         self.conv1 = nn.Conv1d(channels, channels, kernel_size=1, bias=False)
         self.conv2 = nn.Conv1d(channels, channels, kernel_size=1, bias=False)
@@ -186,13 +186,15 @@ class PointTransformerSeg(nn.Module):
         self.conv2 = nn.Conv1d(64, 64, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(64)
+       
         self.gather_local_0 = Local_op(in_channels=128, out_channels=128)
         self.gather_local_1 = Local_op(in_channels=256, out_channels=256)
         self.gather_local_2 = Local_op(in_channels=512, out_channels=512)
+       
         self.pt_last = StackedAttention(channels=512)
 
         self.relu = nn.ReLU()
-        self.conv_fuse = nn.Sequential(nn.Conv1d(1152, 1024, kernel_size=1, bias=False),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(2560, 1024, kernel_size=1, bias=False),
                                    nn.BatchNorm1d(1024),
                                    nn.LeakyReLU(negative_slope=0.2))
 
@@ -204,7 +206,7 @@ class PointTransformerSeg(nn.Module):
         # self.dp2 = nn.Dropout(p=0.5)
         # self.linear3 = nn.Linear(256, output_channels)
 
-        self.linear1 = nn.Conv1d(2560, 512, 1)
+        self.linear1 = nn.Conv1d(2048, 512, 1)
         self.bn6 = nn.BatchNorm1d(512)
         self.dp1 = nn.Dropout(p=0.5)
         self.linear2 = nn.Conv1d(512, 256, 1)
@@ -226,7 +228,7 @@ class PointTransformerSeg(nn.Module):
         new_xyz, new_feature = sample_and_group_all(nsample=64, xyz=new_xyz, points=feature) 
         feature_1 = self.gather_local_1(new_feature)
 
-        # feature = feature_1.permute(0, 2, 1)
+        feature = feature_1.permute(0, 2, 1)
 
         new_xyz, new_feature = sample_and_group_all(nsample=64, xyz=new_xyz, points=feature) 
         feature_2 = self.gather_local_2(new_feature)
@@ -246,11 +248,15 @@ class PointTransformerSeg(nn.Module):
 
         x = self.conv_fuse(x)
         x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
+        
         # print(x.size())
         # print(x1.size())
+        
         x = torch.cat([x, x1], dim = 1) 
+        
         # x = x.view(batch_size, -1)
         # print(x.size())
+        
         x = self.relu(self.bn6(self.linear1(x)))
         x = self.dp1(x)
         x = self.relu(self.bn7(self.linear2(x)))
