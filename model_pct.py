@@ -201,7 +201,7 @@ class PointTransformerSeg(nn.Module):
         self.pt_last = StackedAttention(channels=256)
 
         self.relu = nn.ReLU()
-        self.conv_fuse = nn.Sequential(nn.Conv1d(1088, 1024, kernel_size=1, bias=False),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(1216, 1024, kernel_size=1, bias=False),
                                    nn.BatchNorm1d(1024),
                                    nn.LeakyReLU(negative_slope=0.2))
 
@@ -227,11 +227,12 @@ class PointTransformerSeg(nn.Module):
         batch_size, _, _ = x.size()
         x = self.relu(self.bn1(self.conv1(x))) # B, D, N
         x = self.relu(self.bn2(self.conv2(x))) # B, D, N
-
+        # print(x.size())
         a0 = self.sa_layer0(x)
         # print(a0.size())
 
-        x = x.permute(0, 2, 1)
+        # x = x.permute(0, 2, 1)
+        a0 = a0.permute(0, 2, 1)
         new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=xyz, points=a0)         
         feature_0 = self.gather_local_0(new_feature)
         feature = feature_0.permute(0, 2, 1)
@@ -252,11 +253,11 @@ class PointTransformerSeg(nn.Module):
         # print(feature_.size())
         
         x = self.pt_last(feature_1)
-        
+        # print(x.size())
         
         # print(x.size())
-
-        x = torch.cat([x, a0], dim=1)
+        # print(a0.size())
+        x = torch.cat([x, a0.permute(0,2,1), feature_0], dim=1)
 
         # feature_1 = feature_1.repeat(1, 4, 1)
         # x = x + feature_1
