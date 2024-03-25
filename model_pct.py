@@ -201,7 +201,7 @@ class PointTransformerSeg(nn.Module):
         self.pt_last = StackedAttention(channels=256)
 
         self.relu = nn.ReLU()
-        self.conv_fuse = nn.Sequential(nn.Conv1d(1088, 1024, kernel_size=1, bias=False),
+        self.conv_fuse = nn.Sequential(nn.Conv1d(1280, 1024, kernel_size=1, bias=False),
                                    nn.BatchNorm1d(1024),
                                    nn.LeakyReLU(negative_slope=0.2))
 
@@ -213,7 +213,7 @@ class PointTransformerSeg(nn.Module):
         # self.dp2 = nn.Dropout(p=0.5)
         # self.linear3 = nn.Linear(256, output_channels)
 
-        self.linear1 = nn.Conv1d(2048, 512, 1)
+        self.linear1 = nn.Conv1d(1024, 512, 1)
         self.bn6 = nn.BatchNorm1d(512)
         self.dp1 = nn.Dropout(p=0.5)
         self.linear2 = nn.Conv1d(512, 256, 1)
@@ -257,19 +257,19 @@ class PointTransformerSeg(nn.Module):
         
         # print(x.size())
         # print(a0.size())
-        x = torch.cat([x, a0.permute(0,2,1)], dim=1)
+        x = torch.cat([x, feature_1], dim=1)
 
         # feature_1 = feature_1.repeat(1, 4, 1)
         # x = x + feature_1
 
 
         x = self.conv_fuse(x)
-        x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
+        # x1 = torch.max(x, 2)[0].unsqueeze(dim = -1).repeat(1, 1, x.size(2)) # Global features
         
         # print(x.size())
         # print(x1.size())
         
-        x = torch.cat([x, x1], dim = 1) 
+        # x = torch.cat([x, x1], dim = 1) 
         
         # x = x.view(batch_size, -1)
         # print(x.size())
