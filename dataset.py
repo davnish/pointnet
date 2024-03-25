@@ -7,7 +7,7 @@ import numpy as np
 import laspy
 import h5py
 
-# import open3d as o3d
+import open3d as o3d
 
 class tald(Dataset):
     def __init__(self, grid_size, points_taken):
@@ -137,18 +137,18 @@ def grid_als(device, grid_size, points_taken, data, classification):
 
 
 if __name__ == '__main__':
-    # data = Dales(25, 2048)
+    data = Dales('cpu', 25, 4096)
     # # print(data[10][0])
     # # visualize(data[5][0].numpy())
-    # vis = []
-    # for i in range(len(data)):
-    #     pcd = o3d.geometry.PointCloud()
-    #     pcd.points = o3d.utility.Vector3dVector(data[i][0])
-    #     pcd.colors = o3d.utility.Vector3dVector(np.random.rand(1,3).repeat(2048, axis = 0))
-    #     vis.append(pcd)
+    vis = []
+    for i in range(len(data)):
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(data[i][0])
+        pcd.colors = o3d.utility.Vector3dVector(np.random.rand(1,3).repeat(4096, axis = 0))
+        vis.append(pcd)
 
     # # print(vis)
-    # o3d.visualization.draw_geometries(vis)
+    o3d.visualization.draw_geometries(vis)
 
 
 

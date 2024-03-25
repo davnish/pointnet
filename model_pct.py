@@ -286,7 +286,7 @@ class PointTransformerSeg(nn.Module):
         x = self.dp2(x)
         x = self.relu(self.bn8(self.linear3(x) + feature_1))
         x = self.dp3(x)
-        x = self.relu(self.bn9(self.linear4(x) + feature.permute(0,2,1)))
+        x = self.relu(self.bn9(self.linear4(x) + feature.permute(0,2,1))) # Needed permutation because we permuted it above
         # x = self.dp4(x)
         x = self.linear5(x)
         
