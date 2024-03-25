@@ -187,7 +187,7 @@ class PointTransformerSeg(nn.Module):
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(64)
        
-        self.sa_layer0 = SA_Layer(64)
+        # self.sa_layer0 = SA_Layer(64)
         
         self.gather_local_0 = Local_op(in_channels=128, out_channels=128)
 
@@ -228,12 +228,12 @@ class PointTransformerSeg(nn.Module):
         x = self.relu(self.bn1(self.conv1(x))) # B, D, N
         x = self.relu(self.bn2(self.conv2(x))) # B, D, N
         # print(x.size())
-        a0 = self.sa_layer0(x)
+        # a0 = self.sa_layer0(x)
         # print(a0.size())
 
-        # x = x.permute(0, 2, 1)
-        a0 = a0.permute(0, 2, 1)
-        new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=xyz, points=a0)         
+        x = x.permute(0, 2, 1)
+        # a0 = a0.permute(0, 2, 1)
+        new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=xyz, points=x)         
         feature_0 = self.gather_local_0(new_feature)
         feature = feature_0.permute(0, 2, 1)
 
