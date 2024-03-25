@@ -217,14 +217,14 @@ class PointTransformerSeg(nn.Module):
         self.bn6 = nn.BatchNorm1d(1024)
         self.dp1 = nn.Dropout(p=0.5)        
         self.linear2 = nn.Conv1d(1024, 512, 1)
-        self.bn7 = nn.BatchNorm1d(1024)
+        self.bn7 = nn.BatchNorm1d(512)
         self.dp2 = nn.Dropout(p=0.5)
         self.linear3 = nn.Conv1d(512, 256, 1)
         self.bn8 = nn.BatchNorm1d(256)
         self.dp3 = nn.Dropout(p=0.5)
-        self.linear4 = nn.Conv1d(128, 64, 1)
-        self.bn9 = nn.BatchNorm1d(64)
-        self.linear5 = nn.Conv1d(64, output_channels, 1)
+        self.linear4 = nn.Conv1d(256, 128, 1)
+        self.bn9 = nn.BatchNorm1d(128)
+        self.linear5 = nn.Conv1d(128, output_channels, 1)
 
 
     def forward(self, x):
@@ -286,7 +286,7 @@ class PointTransformerSeg(nn.Module):
         x = self.dp2(x)
         x = self.relu(self.bn8(self.linear3(x) + feature_1))
         x = self.dp3(x)
-        x = self.relu(self.bn9(self.linear4(x) + feature))
+        x = self.relu(self.bn9(self.linear4(x) + feature.permute(0,2,1)))
         # x = self.dp4(x)
         x = self.linear5(x)
         
