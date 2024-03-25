@@ -50,7 +50,7 @@ class Dales(Dataset):
             self.data = tiles['x']
             self.label = tiles['y']
         else:
-            las = laspy.read(os.path.join("data", "Dales", "5085_54320.las"))
+            las = laspy.read(os.path.join("data", "Dales", "5145_54460.las"))
             las_classification = las_label_replace(las)
             self.data, self.label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
             np.savez(os.path.join("data", "Dales", f"dales_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
