@@ -10,6 +10,7 @@ import time
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 import numpy as np
 import argparse
+import os
 torch.manual_seed(42)
 
 # Hyperparameter----
@@ -35,6 +36,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--lr', type = float, default= lr)
 parser.add_argument('--epoch', type = int, default = epoch)
 parser.add_argument('--step_size', type = int, default = step_size)
+parser.add_argument('--model_name', default = '42')
 
 
 args = parser.parse_args()
@@ -127,8 +129,16 @@ if __name__ == '__main__':
         if _epoch%eval_train_test==0:
             val_loss, val_acc, bal_val_acc = test_loop(test_loader)
             print(f'Epoch {_epoch} | lr: {scheduler.get_last_lr()}:\n train_loss: {train_loss:.4f} | train_acc: {train_acc:.4f} | bal_train_acc: {bal_avg_acc:.4f}\n val_loss: {val_loss:.4f} | val_acc: {val_acc:.4f} | bal_val_acc: {bal_val_acc:.4f}')
+        
+
+
         # break
         
     end = time.time()
 
     print(f'Total_time: {end-start}')
+
+    if not os.path.exists(os.path.join("model", "best")):
+        os.makedirs(os.path.join("model", "best"))
+    torch.save(model.state_dict(), os.path.join("model", "best", f"model_{args.model_name}.pt"))
+    print(f"Model Saved at {args.epoch}")
