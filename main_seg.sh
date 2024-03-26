@@ -1,0 +1,1 @@
+python main_seg.py --epoch 1000 --lr 0.001 --step_size 100

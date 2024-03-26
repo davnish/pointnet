@@ -34,7 +34,7 @@ parser = argparse.ArgumentParser()
 # parser.add_argument('grid_size', default = grid_size)
 parser.add_argument('--lr', type = float, default= lr)
 parser.add_argument('--epoch', type = int, default = epoch)
-# parser.add_argument('points_taken', default= points_taken)
+parser.add_argument('--step_size', type = int, default = step_size)
 
 
 args = parser.parse_args()
@@ -58,7 +58,7 @@ model = PointTransformerSeg()
 # loss, Optimizer, Scheduler
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = args.lr)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = step_size, gamma = 0.8)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = args.step_size, gamma = 0.9)
 model = model.to(device)
 
 
