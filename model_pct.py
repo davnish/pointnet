@@ -226,6 +226,9 @@ class PointTransformerSeg(nn.Module):
         self.bn9 = nn.BatchNorm1d(128)
         self.linear5 = nn.Conv1d(128, output_channels, 1)
 
+        self.bn10 = nn.BatchNorm1d(128)
+        self.bn11 = nn.BatchNorm1d(256)
+
 
     def forward(self, x):
         xyz = x[..., :3]
@@ -241,12 +244,12 @@ class PointTransformerSeg(nn.Module):
         # a0 = a0.permute(0, 2, 1)
         new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=xyz, points=x)         
         feature_0 = self.gather_local_0(new_feature)
-        feature = feature_0.permute(0, 2, 1)
+        feature = self.bn10(feature_0).permute(0, 2, 1)
 
         # a1 = self.sa_layer1(feature)
 
         new_xyz, new_feature = sample_and_group_all(nsample=32, xyz=new_xyz, points=feature) 
-        feature_1 = self.gather_local_1(new_feature)
+        feature_1 = self.bn11(self.gather_local_1(new_feature))
 
         # a2 = self.sa_layer2(feature_1.permute(0,2,1))
 

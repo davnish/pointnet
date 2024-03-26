@@ -6,3 +6,5 @@ __pycache__/
 .DS_Store
 *.sh
 basic.py
+vis.py
+basic2.py

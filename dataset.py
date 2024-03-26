@@ -138,16 +138,22 @@ def grid_als(device, grid_size, points_taken, data, classification):
 
 if __name__ == '__main__':
     # data = Dales('cpu', 25, 4096)
-    # # # print(data[10][0])
-    # # # visualize(data[5][0].numpy())
+    # # # # print(data[10][0])
+    # # # # visualize(data[5][0].numpy())
     # vis = []
+    # colors = np.random.rand(8,3)
     # for i in range(len(data)):
     #     pcd = o3d.geometry.PointCloud()
     #     pcd.points = o3d.utility.Vector3dVector(data[i][0])
-    #     pcd.colors = o3d.utility.Vector3dVector(np.random.rand(1,3).repeat(4096, axis = 0))
+    #     color = np.ones(4096,)
+    #     for j in range(8):
+    #         if data[i][1] == j:
+    #             color[data[i][1]] += colors[j]
+    #     pcd.colors = o3d.utility.Vector3dVector(colors)
+            
     #     vis.append(pcd)
 
-    # # # print(vis)
+    # # # # print(vis)
     # o3d.visualization.draw_geometries(vis)
 
 
