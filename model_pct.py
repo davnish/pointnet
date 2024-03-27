@@ -25,18 +25,13 @@ def sample_and_group(npoint, nsample, xyz, points):
 def sample_and_group_all(nsample, xyz, points):
     B, N, C = xyz.shape
     S = N
-    
-    # fps_idx = farthest_point_sample(xyz, npoint) # [B, npoint]
-
-    # new_xyz = index_points(xyz, fps_idx) 
-    # new_points = points
 
     dists = square_distance(xyz, xyz)  # B x npoint x N
     idx = dists.argsort()[:, :, :nsample]  # B x npoint x K
 
     grouped_points = index_points(points, idx)
     grouped_points_norm = grouped_points - points.view(B, S, 1, -1)
-    # print(grouped_points.size())
+
     new_points = torch.cat([grouped_points_norm, points.view(B, S, 1, -1).repeat(1, 1, nsample, 1)], dim=-1)
     return xyz, new_points
 

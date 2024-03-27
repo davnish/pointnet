@@ -46,8 +46,9 @@ args = parser.parse_args()
 device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 
 # Splitting the data
-_modelnet40 = Dales(device, grid_size=grid_size, points_taken=points_taken)
-train_dataset, test_dataset = random_split(_modelnet40, [0.7, 0.3])
+_dales = Dales(device, grid_size=grid_size, points_taken=points_taken)
+print("File Read Complete")
+train_dataset, test_dataset = random_split(_dales, [0.7, 0.3])
 
 # Loading the data
 train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, drop_last=True)
@@ -121,6 +122,7 @@ def test_loop(loader):
     return total_loss/len(loader), accuracy_score(y_true, y_preds), balanced_accuracy_score(y_true, y_preds), y_preds
 
 if __name__ == '__main__':
+    print("Running Epochs")
     print(f'{device = }, {grid_size = }, {points_taken = }, {args.epoch = }, {n_embd = }, {n_layers = }, {n_heads = }, {batch_size = }, {args.lr = }')
     start = time.time()
     for _epoch in range(1, args.epoch+1): 

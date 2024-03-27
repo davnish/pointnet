@@ -6,6 +6,7 @@ import os
 import numpy as np
 import laspy
 import h5py
+import glob
 torch.manual_seed(42)
 
 # import open3d as o3d
@@ -51,9 +52,15 @@ class Dales(Dataset):
             self.data = tiles['x']
             self.label = tiles['y']
         else:
-            las = laspy.read(os.path.join("data", "Dales", "5145_54460.las"))
-            las_classification = las_label_replace(las)
-            self.data, self.label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
+            self.data = []
+            self.label = []
+            for fl in glob.glob(os.path.join("data", "Dales", "*.las")):
+                las = laspy.read(fl)
+                las_classification = las_label_replace(las)
+                data, label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
+                self.data.extend(data)
+                self.label.extend(label)
+            
             np.savez(os.path.join("data", "Dales", f"dales_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
 
     def __getitem__(self, item):
@@ -112,10 +119,6 @@ def grid_als(device, grid_size, points_taken, data, classification):
             label = torch.tensor(label).unsqueeze(0).unsqueeze(2).to(device)
 
             tiles_idx = farthest_point_sample(grid, points_taken) # using fps
-            
-            # print(tiles_idx.size())
-            # print(grid.size())
-            # print(label.size())
 
             
             tiles.append(index_points(grid, tiles_idx).squeeze().cpu().numpy())
@@ -126,64 +129,6 @@ def grid_als(device, grid_size, points_taken, data, classification):
 
     return tiles_np, tiles_np_labels
 
-# def visualize(data):
-#     # las_xyz, _ = load_data(25, 2048)
-#     # las_xyz, _ = modelnet40()
-#     # print(data.shape)
-#     pcd = o3d.geometry.PointCloud()
-#     pcd.points = o3d.utility.Vector3dVector(data)
-#     pcd.colors = o3d.utility.Vector3dVector(np.random.randint(0,255, (3,)))
-#     o3d.visualization.draw_geometries([pcd])
-
-
 
 if __name__ == '__main__':
-    # data = Dales('cpu', 25, 4096)
-    # # # # print(data[10][0])
-    # # # # visualize(data[5][0].numpy())
-    # vis = []
-    # colors = np.random.rand(8,3)
-    # for i in range(len(data)):
-    #     pcd = o3d.geometry.PointCloud()
-    #     pcd.points = o3d.utility.Vector3dVector(data[i][0])
-    #     color = np.ones(4096,)
-    #     for j in range(8):
-    #         if data[i][1] == j:
-    #             color[data[i][1]] += colors[j]
-    #     pcd.colors = o3d.utility.Vector3dVector(colors)
-            
-    #     vis.append(pcd)
-
-    # # # # print(vis)
-    # o3d.visualization.draw_geometries(vis)
-
-
-
-    # n = np.random.randn(5,3)
-    # print(n)
-
-    # print(n[[1,2,3]])
-    
-    # print(1)
-    
-    # with h5py.File('data/modelnet40_ply_hdf5_2048/ply_data_train0.h5') as F:
-    #     data = F['data'][()]
-    #     label = F['label'][()]
-
-    # print(data.shape, label.shape)
-    # print(np.unique(label))
-    
-
-    # print(data[()])
-    # from torch.utils.data import DataLoader
-    # from torch.utils.data import random_split
-    # # visualize()
-    # train = Dales(20, 2048)
-    # _, test = random_split(train, [0.9, 0.1])
-    # print(len(test))
-    # a = DataLoader(train, shuffle = True, batch_size = 8)
-    # print()
-    # train = Dales(25, 2048)
-    # print(train[0])
-    # visualize(train)
     pass

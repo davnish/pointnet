@@ -34,35 +34,63 @@ def visualize(data, label):
 
     return pcd
 
-loader = DataLoader(Dales('cuda', 25, 4096), batch_size = 8)
+def visualize_res():
+    loader = DataLoader(Dales('cuda', 25, 4096), batch_size = 8)
+    tiles = np.load(os.path.join("data", "Dales" , f"dales_tt_25_4096.npz"))
+    data = tiles['x'].reshape(-1, 3)
+    label = tiles['y'].reshape(-1)
+
+    model = PointTransformerSeg()
+    model_name = 1
+    model.load_state_dict(torch.load(os.path.join("model", "best", f"model_{model_name}.pt")))
+    # model.eval()
+
+    _,_,_,preds = test_loop(loader)
+    preds = np.asarray(preds).reshape(-1)
+
+    shifted_x_data = data
+    pcd = visualize(data, label)
+
+    # data[:, 0] += 550
+    # pcd2 = visualize(data, preds)
+    # # print(shifted_x_data)
+    # print(np.unique(preds), preds.shape)
+    # print(np.unique(label, return_counts=True), label.shape)
+
+
+
+
+
+    vis1 = o3d.visualization.Visualizer()
+    vis1.create_window()
+    vis1.add_geometry(pcd)
+    # vis1.add_geometry(pcd2)
+    vis1.run()
+
+
 tiles = np.load(os.path.join("data", "Dales" , f"dales_tt_25_4096.npz"))
-data = tiles['x'].reshape(-1, 3)
-label = tiles['y'].reshape(-1)
+# data = tiles['x'].reshape(-1, 3)
+data = tiles['x']
+print(data.shape)
+# label = tiles['y'].reshape(-1)
+# pcd = visualize(data, label)
 
-model = PointTransformerSeg()
-model_name = 1
-model.load_state_dict(torch.load(os.path.join("model", "best", f"model_{model_name}.pt")))
-# model.eval()
+# vis1 = o3d.visualization.Visualizer()
+# vis1.create_window()
+# vis1.add_geometry(pcd)
+# # vis1.add_geometry(pcd2)
+# vis1.run()
+import glob
 
-_,_,_,preds = test_loop(loader)
-preds = np.asarray(preds).reshape(-1)
-
-shifted_x_data = data
-pcd = visualize(data, label)
-
-data[:, 0] += 550
-pcd2 = visualize(data, preds)
-# print(shifted_x_data)
-print(np.unique(preds), preds.shape)
-print(np.unique(label, return_counts=True), label.shape)
-# print
-
-
+for fl in glob.glob(os.path.join("data", "Dales", "*.las")):
+    # las = laspy.read(fl)
+    # las_classification = las_label_replace(las)
+    # data, label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
+    # self.data.extend(data)
+    # self.label.extend(label)
+    print(fl)
 
 
-vis1 = o3d.visualization.Visualizer()
-vis1.create_window()
-vis1.add_geometry(pcd)
-vis1.add_geometry(pcd2)
-vis1.run()
+
+
 
