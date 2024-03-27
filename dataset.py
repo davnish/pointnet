@@ -52,15 +52,16 @@ class Dales(Dataset):
             self.data = tiles['x']
             self.label = tiles['y']
         else:
+
             self.data = []
-            self.label = []
+            self.label = np.array([])
             for fl in glob.glob(os.path.join("data", "Dales", "*.las")):
                 las = laspy.read(fl)
                 las_classification = las_label_replace(las)
                 data, label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
             
                 self.data.extend(data)
-                print(len(self.data))
+                # print(len(self.data))
                 self.label.extend(label)
             
             np.savez(os.path.join("data", "Dales", f"dales_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
@@ -72,7 +73,7 @@ class Dales(Dataset):
         return pointcloud, label
 
     def __len__(self):
-        return self.data.shape[0]
+        return len(self.data)
 
 def las_label_replace(las):
     las_classification = np.asarray(las.classification)
