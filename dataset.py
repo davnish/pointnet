@@ -58,7 +58,9 @@ class Dales(Dataset):
                 las = laspy.read(fl)
                 las_classification = las_label_replace(las)
                 data, label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
+            
                 self.data.extend(data)
+                print(len(self.data))
                 self.label.extend(label)
             
             np.savez(os.path.join("data", "Dales", f"dales_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
@@ -131,4 +133,5 @@ def grid_als(device, grid_size, points_taken, data, classification):
 
 
 if __name__ == '__main__':
+    train = Dales('cuda', 25, 4096)
     pass

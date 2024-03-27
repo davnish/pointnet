@@ -46,7 +46,7 @@ args = parser.parse_args()
 device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 
 # Splitting the data
-_dales = Dales(device, grid_size=grid_size, points_taken=points_taken)
+_dales = Dales(device, grid_size, points_taken)
 print("File Read Complete")
 train_dataset, test_dataset = random_split(_dales, [0.7, 0.3])
 
