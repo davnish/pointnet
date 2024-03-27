@@ -6,6 +6,7 @@ import os
 import numpy as np
 import laspy
 import h5py
+torch.manual_seed(42)
 
 # import open3d as o3d
 

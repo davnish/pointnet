@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from util import farthest_point_sample, index_points, square_distance
+torch.manual_seed(42)
 
 
 def sample_and_group(npoint, nsample, xyz, points):

@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 # from model import pct, pointnet
 from model_pct import PointTransformerSeg
-from dataset import Dales, modelnet40
+from dataset import Dales
 import time
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 import numpy as np
@@ -118,7 +118,7 @@ def test_loop(loader):
         # np.savez('raw.npz', data1 = data.cpu(), y_true1 = y_true, y_preds1 = y_preds)
         # break
     # print(f'val_loss: {total_loss/len(test_loader)}, val_acc: {accuracy_score(y_true, y_preds)}')  
-    return total_loss/len(loader), accuracy_score(y_true, y_preds), balanced_accuracy_score(y_true, y_preds)
+    return total_loss/len(loader), accuracy_score(y_true, y_preds), balanced_accuracy_score(y_true, y_preds), y_preds
 
 if __name__ == '__main__':
     print(f'{device = }, {grid_size = }, {points_taken = }, {args.epoch = }, {n_embd = }, {n_layers = }, {n_heads = }, {batch_size = }, {args.lr = }')
@@ -127,7 +127,7 @@ if __name__ == '__main__':
         train_loss, train_acc, bal_avg_acc = train_loop(train_loader)
         scheduler.step()
         if _epoch%eval_train_test==0:
-            val_loss, val_acc, bal_val_acc = test_loop(test_loader)
+            val_loss, val_acc, bal_val_acc, _ = test_loop(test_loader)
             print(f'Epoch {_epoch} | lr: {scheduler.get_last_lr()}:\n train_loss: {train_loss:.4f} | train_acc: {train_acc:.4f} | bal_train_acc: {bal_avg_acc:.4f}\n val_loss: {val_loss:.4f} | val_acc: {val_acc:.4f} | bal_val_acc: {bal_val_acc:.4f}')
         
 
@@ -141,4 +141,4 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.join("model", "best")):
         os.makedirs(os.path.join("model", "best"))
     torch.save(model.state_dict(), os.path.join("model", "best", f"model_{args.model_name}.pt"))
-    print(f"Model Saved at {args.epoch}")
+    print(f"Model Saved at {args.epoch} epochs")
