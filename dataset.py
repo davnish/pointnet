@@ -60,10 +60,12 @@ class Dales(Dataset):
                 las_classification = las_label_replace(las)
                 data, label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
                 
-                mn = np.min(data, axis = 1, keepdims=True)
-                mx = np.max(data, axis = 1, keepdims=True)
-                data = (data - mn)/(mx - mn)
-            
+                _data = data.reshape(-1, 3)
+                # _label = label.reshape(-1)
+                mn = np.min(_data, axis = 0, keepdims=True)
+                mx = np.max(_data, axis = 0, keepdims=True)
+                data = ((_data - mn)/(mx - mn)).reshape(data.shape)
+
                 if self.data is None and self.label is None:
                     self.data = data
                     self.label = label
