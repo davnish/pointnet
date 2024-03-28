@@ -70,25 +70,18 @@ def visualize_res():
 
 tiles = np.load(os.path.join("data", "Dales" , f"dales_tt_25_4096.npz"))
 # data = tiles['x'].reshape(-1, 3)
-data = tiles['x']
-print(data.shape)
-# label = tiles['y'].reshape(-1)
-# pcd = visualize(data, label)
+data = tiles['x'][:400].reshape(-1, 3)
 
-# vis1 = o3d.visualization.Visualizer()
-# vis1.create_window()
-# vis1.add_geometry(pcd)
-# # vis1.add_geometry(pcd2)
-# vis1.run()
-import glob
+# mn = np.min(data, axis = 1, keepdims=True)
+# mx = np.max(data, axis = 1, keepdims=True)
+# data = (data - mn)/(mx - mn)
+# print(data.shape)
 
-for fl in glob.glob(os.path.join("data", "Dales", "*.las")):
-    # las = laspy.read(fl)
-    # las_classification = las_label_replace(las)
-    # data, label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
-    # self.data.extend(data)
-    # self.label.extend(label)
-    print(fl)
+pcd = visualize(data, tiles['y'][:400].reshape(-1))
+
+o3d.visualization.draw_geometries([pcd])
+
+
 
 
 

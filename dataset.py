@@ -53,17 +53,28 @@ class Dales(Dataset):
             self.label = tiles['y']
         else:
 
-            self.data = []
-            self.label = np.array([])
+            self.data = None
+            self.label = None
             for fl in glob.glob(os.path.join("data", "Dales", "*.las")):
                 las = laspy.read(fl)
                 las_classification = las_label_replace(las)
                 data, label = grid_als(device, grid_size, points_taken, las.xyz, las_classification)
+                
+                mn = np.min(data, axis = 1, keepdims=True)
+                mx = np.max(data, axis = 1, keepdims=True)
+                data = (data - mn)/(mx - mn)
             
-                self.data.extend(data)
-                # print(len(self.data))
-                self.label.extend(label)
-            
+                if self.data is None and self.label is None:
+                    self.data = data
+                    self.label = label
+                else:
+                    self.data = np.append(self.data, data, axis = 0)
+
+                    self.label = np.append(self.label, label, axis = 0)
+
+            # mn = np.min(self.data, axis = 1, keepdims=True)
+            # mx = np.max(self.data, axis = 1, keepdims=True)
+            # self.data = (self.data - mn)/(mx - mn)
             np.savez(os.path.join("data", "Dales", f"dales_tt_{grid_size}_{points_taken}.npz"), x = self.data, y = self.label)
 
     def __getitem__(self, item):

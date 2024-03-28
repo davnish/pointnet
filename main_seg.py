@@ -13,58 +13,6 @@ import argparse
 import os
 torch.manual_seed(42)
 
-# Hyperparameter----
-
-grid_size = 25 # The size of the grid from 500mx500m 
-points_taken = 4096 # Points taken per each grid 
-batch_size = 8
-lr = 1e-4
-epoch = 100
-eval_train_test = 10
-n_embd = 128 
-n_heads = 4
-n_layers = 2
-step_size = 50 # Reduction of Learning at how many epochs
-batch_eval_inter = 100
-dropout = 0.3
-# eval_test = 10
-
-# ------------------
-
-parser = argparse.ArgumentParser()
-# parser.add_argument('grid_size', default = grid_size)
-parser.add_argument('--lr', type = float, default= lr)
-parser.add_argument('--epoch', type = int, default = epoch)
-parser.add_argument('--step_size', type = int, default = step_size)
-parser.add_argument('--model_name', default = '42')
-
-
-args = parser.parse_args()
-
-
-# Setting Device
-device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
-
-# Splitting the data
-_dales = Dales(device, grid_size, points_taken)
-print("File Read Complete")
-train_dataset, test_dataset = random_split(_dales, [0.7, 0.3])
-
-# Loading the data
-train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, drop_last=True)
-test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False, drop_last=True)
-
-# Initialize the model
-# model = pct(n_embd, n_heads, n_layers)
-model = PointTransformerSeg()
-
-# loss, Optimizer, Scheduler
-loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr = args.lr)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = args.step_size, gamma = 0.9)
-model = model.to(device)
-
-
 #Training the model
 def train_loop(loader,see_batch_loss = False):
     model.train()
@@ -122,6 +70,60 @@ def test_loop(loader):
     return total_loss/len(loader), accuracy_score(y_true, y_preds), balanced_accuracy_score(y_true, y_preds), y_preds
 
 if __name__ == '__main__':
+
+    # Hyperparameter----
+
+    grid_size = 25 # The size of the grid from 500mx500m 
+    points_taken = 4096 # Points taken per each grid 
+    batch_size = 8
+    lr = 1e-4
+    epoch = 100
+    eval_train_test = 10
+    n_embd = 128 
+    n_heads = 4
+    n_layers = 2
+    step_size = 50 # Reduction of Learning at how many epochs
+    batch_eval_inter = 100
+    dropout = 0.3
+    # eval_test = 10
+
+    # ------------------
+
+    parser = argparse.ArgumentParser()
+    # parser.add_argument('grid_size', default = grid_size)
+    parser.add_argument('--lr', type = float, default= lr)
+    parser.add_argument('--epoch', type = int, default = epoch)
+    parser.add_argument('--step_size', type = int, default = step_size)
+    parser.add_argument('--model_name', default = '42')
+
+
+    args = parser.parse_args()
+
+
+    # Setting Device
+    device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
+
+    # Splitting the data
+    _dales = Dales(device, grid_size, points_taken)
+    print("File Read Complete")
+    train_dataset, test_dataset = random_split(_dales, [0.7, 0.3])
+
+    # Loading the data
+    train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, drop_last=True)
+    test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = False, drop_last=True)
+
+    # Initialize the model
+    # model = pct(n_embd, n_heads, n_layers)
+    model = PointTransformerSeg()
+
+    # loss, Optimizer, Scheduler
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr = args.lr)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = args.step_size, gamma = 0.9)
+    model = model.to(device)
+
+
+
     print("Running Epochs")
     print(f'{device = }, {grid_size = }, {points_taken = }, {args.epoch = }, {n_embd = }, {n_layers = }, {n_heads = }, {batch_size = }, {args.lr = }')
     start = time.time()
@@ -143,4 +145,4 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.join("model", "best")):
         os.makedirs(os.path.join("model", "best"))
     torch.save(model.state_dict(), os.path.join("model", "best", f"model_{args.model_name}.pt"))
-    print(f"Model Saved at {args.epoch} epochs")
+    print(f"Model Saved at {args.epoch} epochs, named: model_{args.model_name}")
